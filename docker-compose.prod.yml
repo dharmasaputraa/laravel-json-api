@@ -1,0 +1,177 @@
+# =============================================================================
+# docker-compose.prod.yml — Production (full stack)
+#
+# Usage:
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+#
+# Adds app (PHP-FPM) + nginx on top of the infrastructure services.
+# =============================================================================
+
+services:
+
+  # ---------------------------------------------------------------------------
+  # App — Laravel PHP-FPM (production only)
+  # ---------------------------------------------------------------------------
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    image: ${APP_IMAGE:-laravel-app}:${APP_VERSION:-latest}
+    container_name: ${COMPOSE_PROJECT_NAME:-laravel}_app
+    restart: always
+    environment:
+      APP_ENV: production
+      APP_DEBUG: "false"
+      APP_KEY: ${APP_KEY}
+      DB_CONNECTION: pgsql
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_DATABASE: ${DB_DATABASE:-laravel}
+      DB_USERNAME: ${DB_USERNAME:-laravel}
+      DB_PASSWORD: ${DB_PASSWORD}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      CACHE_DRIVER: redis
+      SESSION_DRIVER: redis
+      QUEUE_CONNECTION: redis
+    volumes:
+      - ./docker/php/opcache.ini:/usr/local/etc/php/conf.d/99-opcache.ini:ro
+      - app_storage:/var/www/html/storage
+    networks:
+      - internal
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "php-fpm -t 2>/dev/null || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+    deploy:
+      replicas: 2
+      update_config:
+        order: start-first
+        failure_action: rollback
+        delay: 10s
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 512M
+        reservations:
+          memory: 256M
+
+  # ---------------------------------------------------------------------------
+  # Nginx — Reverse proxy + serve static assets (production only)
+  # ---------------------------------------------------------------------------
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: ${COMPOSE_PROJECT_NAME:-laravel}_nginx
+    restart: always
+    ports:
+      - "${APP_PORT:-80}:80"
+    volumes:
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+      - app_storage:/var/www/html/storage:ro
+      - ./public:/var/www/html/public:ro
+    networks:
+      - internal
+    depends_on:
+      app:
+        condition: service_healthy
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+
+  # ---------------------------------------------------------------------------
+  # PostgreSQL — production overrides
+  # ---------------------------------------------------------------------------
+  postgres:
+    restart: always
+    ports: !override
+      - "5432"    # Internal only, not exposed to host
+    command: >
+      postgres
+      -c shared_buffers=256MB
+      -c effective_cache_size=512MB
+      -c max_connections=200
+      -c work_mem=4MB
+      -c maintenance_work_mem=64MB
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ---------------------------------------------------------------------------
+  # Redis — production overrides
+  # ---------------------------------------------------------------------------
+  redis:
+    restart: always
+    ports: !override
+      - "6379"    # Internal only, not exposed to host
+    command: >
+      redis-server
+      --appendonly yes
+      --maxmemory 512mb
+      --maxmemory-policy allkeys-lru
+      --requirepass ${REDIS_PASSWORD:-}
+    logging:
+      driver: json-file
+      options:
+        max-size: "5m"
+        max-file: "3"
+
+  # ---------------------------------------------------------------------------
+  # Queue — production overrides
+  # ---------------------------------------------------------------------------
+  queue:
+    restart: always
+    environment:
+      APP_ENV: production
+      HORIZON_GRACEFUL_SHUTDOWN: "60"
+    volumes:
+      - ./docker/php/opcache.ini:/usr/local/etc/php/conf.d/99-opcache.ini:ro
+      - app_storage:/var/www/html/storage
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+    deploy:
+      replicas: 2
+      update_config:
+        order: start-first
+        failure_action: rollback
+        delay: 10s
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512M
+        reservations:
+          memory: 128M
+
+  # ---------------------------------------------------------------------------
+  # Scheduler — production overrides
+  # ---------------------------------------------------------------------------
+  scheduler:
+    restart: always
+    volumes:
+      - ./docker/php/opcache.ini:/usr/local/etc/php/conf.d/99-opcache.ini:ro
+      - app_storage:/var/www/html/storage
+    deploy:
+      replicas: 1
+
+networks:
+  internal:
+    driver: bridge

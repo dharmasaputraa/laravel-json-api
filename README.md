@@ -1,58 +1,316 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# JSON API Spec — Laravel 13
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+A Laravel 13 application following the JSON:API specification, running on **PostgreSQL**, **Redis**, and **Laravel Horizon** — containerized with Docker.
 
-## About Laravel
+---
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## Architecture
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+### Development (local Laravel + Docker infrastructure)
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
-
-## Learning Laravel
-
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
-
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
-
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
-
-## Agentic Development
-
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
-
-```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
+```
+┌──────────────────────────────────────────────────┐
+│  Your WSL Machine                                │
+│                                                  │
+│  Terminal 1:  php artisan serve  (localhost:8000) │
+│  Terminal 2:  npm run dev        (Vite HMR)      │
+│                                                  │
+│  Docker:                                         │
+│  ┌──────────┐  ┌─────────┐  ┌──────────┐        │
+│  │PostgreSQL │  │  Redis  │  │ Horizon  │        │
+│  │ :5432     │  │ :6379   │  │ Queue    │        │
+│  └──────────┘  └─────────┘  └──────────┘        │
+│                  ┌──────────┐ ┌──────────┐       │
+│                  │Scheduler │ │   Pail   │       │
+│                  └──────────┘ └──────────┘       │
+└──────────────────────────────────────────────────┘
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+### Production (full Docker stack)
 
-## Contributing
+```
+                    ┌─────────────┐
+                    │   Browser    │
+                    └──────┬──────┘
+                           │ :80
+                    ┌──────▼──────┐
+                    │    Nginx     │  ← Reverse proxy + static files
+                    │  (fastcgi)   │
+                    └──────┬──────┘
+                           │ :9000 (FastCGI)
+              ┌────────────▼────────────┐
+              │   PHP-FPM (x N workers) │  ← Laravel application
+              └──┬──────────┬──────────┬┘
+                 │          │          │
+           ┌─────▼───┐ ┌───▼────┐ ┌──▼──────┐
+           │PostgreSQL│ │ Redis  │ │ Horizon │
+           │  :5432   │ │ :6379  │ │ Worker  │
+           └──────────┘ └────────┘ └─────────┘
+```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+---
 
-## Code of Conduct
+## Prerequisites
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+### Development
+- **PHP 8.4** installed in WSL
+- **Composer** installed in WSL
+- **Node.js 20+** installed in WSL
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) with WSL 2 backend
 
-## Security Vulnerabilities
+### Production
+- Docker only
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+---
 
-## License
+## Quick Start (Development)
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+> **Dev runs Laravel locally.** Docker provides only PostgreSQL, Redis, Horizon queue, and scheduler.
+
+### 1. Start Docker infrastructure
+
+```bash
+# Must be inside WSL
+cd /home/dharmasaputraa/projects/learn-laravel/json-api-spec
+
+# Start postgres, redis, queue (horizon), scheduler, pail
+docker compose up -d
+```
+
+### 2. Setup Laravel
+
+```bash
+# Create .env
+cp .env.example .env
+
+# Install PHP dependencies
+composer install
+
+# Generate app key
+php artisan key:generate
+
+# Run migrations
+php artisan migrate
+```
+
+### 3. Run Laravel locally
+
+```bash
+# Terminal 1 — Laravel dev server
+php artisan serve
+
+# Terminal 2 — Vite (optional, for frontend hot reload)
+npm run dev
+```
+
+### 4. Access
+
+| Service | URL |
+|---|---|
+| **App** | http://localhost:8000 |
+| **Vite** | http://localhost:5173 (auto-injected by Vite) |
+
+### Tailing Logs
+
+```bash
+docker compose logs -f pail    # Live application logs (php artisan pail)
+```
+
+### Stop
+
+```bash
+docker compose down          # Stop, keep data
+docker compose down -v       # Stop, remove all data
+```
+
+---
+
+## Production Setup
+
+### 1. Clone and configure
+
+```bash
+git clone <your-repo-url> /opt/json-api-spec
+cd /opt/json-api-spec
+cp .env.example .env
+```
+
+### 2. Edit `.env` for production
+
+```bash
+nano .env
+```
+
+Set these values:
+```env
+APP_ENV=production
+APP_DEBUG=false
+APP_URL=https://yourdomain.com
+DB_HOST=postgres          # Docker internal hostname
+REDIS_HOST=redis          # Docker internal hostname
+DB_PASSWORD=your-strong-password
+REDIS_PASSWORD=your-redis-password
+```
+
+### 3. Generate app key
+
+```bash
+docker compose run --rm app php artisan key:generate
+```
+
+### 4. Build and start (production mode — full stack)
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+```
+
+### 5. Run migrations
+
+```bash
+docker compose exec app php artisan migrate --force
+```
+
+### 6. Optimize
+
+```bash
+docker compose exec app php artisan config:cache
+docker compose exec app php artisan route:cache
+docker compose exec app php artisan view:cache
+```
+
+### 7. Verify
+
+```bash
+docker compose ps
+curl http://localhost/health
+```
+
+| Service | URL |
+|---|---|
+| **App** | http://localhost (port 80) |
+| **Horizon** | http://localhost/horizon |
+| **Health** | http://localhost/health |
+
+### Redeploy (after code changes)
+
+```bash
+git pull origin main
+
+# Rebuild and restart
+docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+
+# Run new migrations
+docker compose exec app php artisan migrate --force
+
+# Restart PHP-FPM to clear OPcache
+docker compose restart app
+
+# Re-cache config
+docker compose exec app php artisan config:cache
+```
+
+---
+
+## Common Commands
+
+### Docker
+
+```bash
+docker compose up -d                    # Start infrastructure
+docker compose down                      # Stop infrastructure
+docker compose down -v                   # Stop + remove all data
+docker compose build --no-cache          # Rebuild from scratch
+docker compose logs -f queue             # Follow Horizon logs
+docker compose logs -f pail              # Follow application logs (pail)
+docker compose ps                        # Service status
+```
+
+### Laravel Artisan (dev — run locally)
+
+```bash
+php artisan migrate
+php artisan migrate:fresh --seed
+php artisan config:clear
+php artisan cache:clear
+php artisan queue:failed
+php artisan queue:retry all
+```
+
+### Laravel Artisan (prod — run in container)
+
+```bash
+docker compose exec app php artisan <command>
+```
+
+### Database
+
+```bash
+# Connect to PostgreSQL
+docker compose exec postgres psql -U laravel -d json_api_spec
+
+# Backup
+docker compose exec postgres pg_dump -U laravel json_api_spec > backup.sql
+
+# Restore
+cat backup.sql | docker compose exec -T postgres psql -U laravel -d json_api_spec
+```
+
+### Redis
+
+```bash
+docker compose exec redis redis-cli
+docker compose exec redis redis-cli info
+docker compose exec redis redis-cli FLUSHALL
+```
+
+---
+
+## Troubleshooting
+
+### Port already in use
+
+```bash
+# Change in .env
+DB_PORT=5433
+REDIS_PORT=6380
+docker compose up -d
+```
+
+### Database connection refused
+
+```bash
+docker compose ps postgres
+docker compose exec postgres pg_isready -U laravel
+```
+
+### Horizon not processing jobs
+
+```bash
+docker compose logs queue
+docker compose restart queue
+```
+
+### Permission issues
+
+```bash
+chmod -R 775 storage bootstrap/cache
+```
+
+### Reset everything
+
+```bash
+docker compose down -v --rmi local
+docker compose up --build -d
+php artisan migrate:fresh --seed
+```
+
+---
+
+## Tech Stack
+
+- **Laravel** 13 (PHP 8.4)
+- **PostgreSQL** 16
+- **Redis** 7
+- **Nginx** 1.27 (production only)
+- **Laravel Horizon** 5.x
+- **Vite** for frontend assets
