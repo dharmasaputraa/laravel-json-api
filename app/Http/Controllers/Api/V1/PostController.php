@@ -142,7 +142,7 @@ class PostController extends BaseApiController
     }
 
     // ───────────────────────────────────────────────────────────
-    // Approach C (ANTI-PATTERN ❌): Inline response in controller
+    // Approach C (ANTI-PATTERN): Inline response in controller
     //
     // This is intentionally WRONG. It shows what NOT to do:
     // building the JSON:API response array directly in the
@@ -157,7 +157,7 @@ class PostController extends BaseApiController
     // ───────────────────────────────────────────────────────────
 
     /**
-     * List posts (Approach C ❌ — Inline, NO Resource class).
+     * List posts (Approach C — Inline, NO Resource class).
      *
      * Anti-pattern: response structure built directly in the controller.
      * Compare with index() (Approach A) and indexManual() (Approach B)
@@ -172,7 +172,7 @@ class PostController extends BaseApiController
     {
         $posts = $this->postService->query($request);
 
-        // ❌ BAD: Manually building every item's JSON:API shape in the controller
+        // BAD: Manually building every item's JSON:API shape in the controller
         $data = $posts->map(function ($post) {
             $item = [
                 'type' => 'posts',
@@ -194,7 +194,7 @@ class PostController extends BaseApiController
                 ],
             ];
 
-            // ❌ BAD: relationship logic scattered in controller
+            // BAD: relationship logic scattered in controller
             if ($post->relationLoaded('author') && $post->author) {
                 $item['relationships']['author'] = [
                     'data' => ['type' => 'users', 'id' => (string) $post->author->id],
@@ -207,14 +207,14 @@ class PostController extends BaseApiController
             }
             if ($post->relationLoaded('tags')) {
                 $item['relationships']['tags'] = [
-                    'data' => $post->tags->map(fn ($tag) => ['type' => 'tags', 'id' => (string) $tag->id])->all(),
+                    'data' => $post->tags->map(fn($tag) => ['type' => 'tags', 'id' => (string) $tag->id])->all(),
                 ];
             }
 
             return $item;
         })->all();
 
-        // ❌ BAD: pagination meta built by hand
+        // BAD: pagination meta built by hand
         return response()->json([
             'jsonapi' => ['version' => '1.0'],
             'data' => $data,
@@ -236,7 +236,7 @@ class PostController extends BaseApiController
     }
 
     /**
-     * Show a single post (Approach C ❌ — Inline, NO Resource class).
+     * Show a single post (Approach C — Inline, NO Resource class).
      *
      * Anti-pattern: entire JSON:API response hand-coded in the controller.
      *
@@ -250,7 +250,7 @@ class PostController extends BaseApiController
     {
         $post = $this->postService->find($post, $request);
 
-        // ❌ BAD: All response formatting crammed into the controller
+        // BAD: All response formatting crammed into the controller
         $data = [
             'type' => 'posts',
             'id' => (string) $post->id,
@@ -271,7 +271,7 @@ class PostController extends BaseApiController
             ],
         ];
 
-        // ❌ BAD: if you add a new relationship, you must edit this controller
+        // BAD: if you add a new relationship, you must edit this controller
         if ($post->relationLoaded('author') && $post->author) {
             $data['relationships']['author'] = [
                 'data' => ['type' => 'users', 'id' => (string) $post->author->id],
@@ -284,7 +284,7 @@ class PostController extends BaseApiController
         }
         if ($post->relationLoaded('tags')) {
             $data['relationships']['tags'] = [
-                'data' => $post->tags->map(fn ($tag) => ['type' => 'tags', 'id' => (string) $tag->id])->all(),
+                'data' => $post->tags->map(fn($tag) => ['type' => 'tags', 'id' => (string) $tag->id])->all(),
             ];
         }
 

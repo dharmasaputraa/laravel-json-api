@@ -253,14 +253,20 @@ class PostFilterAController extends BaseApiController
      *
      * @unauthenticated
      */
-    #[QueryParameter('filter[status]', description: 'Filter by status', type: 'string', example: 'published')]
-    #[QueryParameter('filter[is_featured]', description: 'Filter featured', type: 'boolean', example: true)]
-    #[QueryParameter('filter[search]', description: 'Search title', type: 'string', example: 'laravel')]
-    #[QueryParameter('filter[published_from]', description: 'Published after', type: 'string', example: '2024-01-01')]
-    #[QueryParameter('filter[published_to]', description: 'Published before', type: 'string', example: '2024-12-31')]
-    #[QueryParameter('filter[tags]', description: 'Filter by tag slug', type: 'string', example: 'eloquent')]
-    #[QueryParameter('include', description: 'Include relations: author,category,tags', type: 'string', example: 'author,tags')]
-    #[QueryParameter('sort', description: 'Sort. Prefix - for desc', type: 'string', example: '-published_at')]
+    #[QueryParameter('page.size', description: 'Number of items per page', type: 'int', default: 15, example: 10)]
+    #[QueryParameter('filter[title]', description: 'Filter by title (partial match)', type: 'string', example: 'laravel')]
+    #[QueryParameter('filter[status]', description: 'Filter by status (draft,published,archived)', type: 'string', example: 'published')]
+    #[QueryParameter('filter[is_featured]', description: 'Filter featured posts', type: 'boolean', example: true)]
+    #[QueryParameter('filter[search]', description: 'Partial search on title', type: 'string', example: 'eloquent')]
+    #[QueryParameter('filter[published_from]', description: 'Published after date (scope)', type: 'string', example: '2024-01-01')]
+    #[QueryParameter('filter[published_to]', description: 'Published before date (scope)', type: 'string', example: '2024-12-31')]
+    #[QueryParameter('filter[tags]', description: 'Filter by tag slug (exact)', type: 'string', example: 'eloquent')]
+    #[QueryParameter('include', description: 'Comma-separated relations. Allowed: author,category,tags', type: 'string', example: 'author,category,tags')]
+    #[QueryParameter('sort', description: 'Sort by field. Prefix - for desc. Allowed: title,created_at,updated_at,published_at,views_count', type: 'string', example: '-published_at')]
+    #[QueryParameter('fields[posts]', description: 'Sparse fieldset. Allowed: title,slug,body,status,is_featured,views_count,published_at,created_at,updated_at', type: 'string', example: 'title,slug')]
+    #[QueryParameter('fields[users]', description: 'Sparse fieldset for author. Allowed: id,name,email', type: 'string', example: 'name')]
+    #[QueryParameter('fields[categories]', description: 'Sparse fieldset for category. Allowed: id,name,slug', type: 'string', example: 'name,slug')]
+    #[QueryParameter('fields[tags]', description: 'Sparse fieldset for tags. Allowed: id,name,slug', type: 'string', example: 'name')]
     public function spatie(Request $request)
     {
         $posts = QueryBuilder::for(Post::class)

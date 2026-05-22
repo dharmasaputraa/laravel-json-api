@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Http\Resources\PostResource;
+use App\Http\Resources\V1\PostResource;
 use App\Models\Post;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -76,14 +76,14 @@ class PostFilterController extends Controller
 
         if (!empty($f['search'])) {
             $t = $f['search'];
-            $query->where(fn ($q) => $q->where('title', 'LIKE', "%$t%")->orWhere('body', 'LIKE', "%$t%"));
+            $query->where(fn($q) => $q->where('title', 'LIKE', "%$t%")->orWhere('body', 'LIKE', "%$t%"));
         }
 
         if (!empty($f['published_from'])) $query->whereDate('published_at', '>=', $f['published_from']);
         if (!empty($f['published_to']))   $query->whereDate('published_at', '<=', $f['published_to']);
 
         if (!empty($f['tags']) && is_array($f['tags'])) {
-            $query->whereHas('tags', fn ($q) => $q->whereIn('slug', $f['tags']));
+            $query->whereHas('tags', fn($q) => $q->whereIn('slug', $f['tags']));
         }
 
         if (isset($f['is_featured'])) {
@@ -144,7 +144,7 @@ class PostFilterController extends Controller
 
         if (!empty($f['search'])) {
             $t = '%' . $f['search'] . '%';
-            $query->where(fn ($q) => $q->where('p.title', 'LIKE', $t)->orWhere('p.body', 'LIKE', $t));
+            $query->where(fn($q) => $q->where('p.title', 'LIKE', $t)->orWhere('p.body', 'LIKE', $t));
         }
 
         if (!empty($f['published_from'])) $query->whereDate('p.published_at', '>=', $f['published_from']);
@@ -238,9 +238,18 @@ class PostFilterController extends Controller
         $clauses = [];
         $b       = [];
 
-        if (!empty($f['status']))       { $clauses[] = 'p.status = ?';       $b[] = $f['status']; }
-        if (!empty($f['category_id'])) { $clauses[] = 'p.category_id = ?';  $b[] = (int) $f['category_id']; }
-        if (!empty($f['author_id']))   { $clauses[] = 'p.user_id = ?';       $b[] = (int) $f['author_id']; }
+        if (!empty($f['status'])) {
+            $clauses[] = 'p.status = ?';
+            $b[] = $f['status'];
+        }
+        if (!empty($f['category_id'])) {
+            $clauses[] = 'p.category_id = ?';
+            $b[] = (int) $f['category_id'];
+        }
+        if (!empty($f['author_id'])) {
+            $clauses[] = 'p.user_id = ?';
+            $b[] = (int) $f['author_id'];
+        }
 
         if (!empty($f['statuses']) && is_array($f['statuses'])) {
             $ph = implode(',', array_fill(0, count($f['statuses']), '?'));
@@ -251,12 +260,22 @@ class PostFilterController extends Controller
         if (!empty($f['search'])) {
             $t = '%' . $f['search'] . '%';
             $clauses[] = '(p.title LIKE ? OR p.body LIKE ?)';
-            $b[] = $t; $b[] = $t;
+            $b[] = $t;
+            $b[] = $t;
         }
 
-        if (!empty($f['published_from'])) { $clauses[] = 'DATE(p.published_at) >= ?'; $b[] = $f['published_from']; }
-        if (!empty($f['published_to']))   { $clauses[] = 'DATE(p.published_at) <= ?'; $b[] = $f['published_to']; }
-        if (!empty($f['min_views']))      { $clauses[] = 'p.views_count >= ?';        $b[] = (int) $f['min_views']; }
+        if (!empty($f['published_from'])) {
+            $clauses[] = 'DATE(p.published_at) >= ?';
+            $b[] = $f['published_from'];
+        }
+        if (!empty($f['published_to'])) {
+            $clauses[] = 'DATE(p.published_at) <= ?';
+            $b[] = $f['published_to'];
+        }
+        if (!empty($f['min_views'])) {
+            $clauses[] = 'p.views_count >= ?';
+            $b[] = (int) $f['min_views'];
+        }
 
         if (isset($f['is_featured'])) {
             $clauses[] = 'p.is_featured = ?';
@@ -310,43 +329,52 @@ class PostFilterController extends Controller
     public function spatie(Request $request)
     {
         $posts = QueryBuilder::for(Post::class)
-            ->allowedFilters([
+            ->allowedFilters(
                 AllowedFilter::exact('status'),
                 AllowedFilter::exact('category_id'),
                 AllowedFilter::exact('author_id', 'user_id'),
                 AllowedFilter::exact('is_featured'),
                 AllowedFilter::partial('title'),
-                AllowedFilter::callback('search', fn ($q, $v) =>
-                    $q->where(fn ($s) => $s->where('title', 'LIKE', "%$v%")->orWhere('body', 'LIKE', "%$v%"))
+                AllowedFilter::callback(
+                    'search',
+                    fn($q, $v) =>
+                    $q->where(fn($s) => $s->where('title', 'LIKE', "%$v%")->orWhere('body', 'LIKE', "%$v%"))
                 ),
                 AllowedFilter::scope('published_from'),
                 AllowedFilter::scope('published_to'),
                 AllowedFilter::scope('tags'),
                 AllowedFilter::scope('search'),
                 AllowedFilter::scope('min_views'),
-            ])
-            ->allowedSorts([
+            )
+            ->allowedSorts(
                 AllowedSort::field('title'),
                 AllowedSort::field('created_at'),
                 AllowedSort::field('views_count'),
                 AllowedSort::field('likes_count'),
-                AllowedSort::field('published_at')->defaultDirection(SortDirection::DESCENDING),
+                AllowedSort::field('published_at')->defaultDirection(SortDirection::Descending),
                 AllowedSort::callback('author_name', function ($q, bool $desc) {
                     $q->join('users', 'users.id', '=', 'posts.user_id')
-                      ->orderBy('users.name', $desc ? 'desc' : 'asc')
-                      ->select('posts.*');
+                        ->orderBy('users.name', $desc ? 'desc' : 'asc')
+                        ->select('posts.*');
                 }),
-            ])
-            ->allowedIncludes([
+            )
+            ->allowedIncludes(
                 AllowedInclude::relationship('author'),
                 AllowedInclude::relationship('category'),
                 AllowedInclude::relationship('tags'),
                 AllowedInclude::count('tagsCount'),
-            ])
-            ->allowedFields([
-                'id', 'title', 'slug', 'status', 'is_featured',
-                'views_count', 'likes_count', 'published_at', 'created_at',
-            ])
+            )
+            ->allowedFields(
+                'id',
+                'title',
+                'slug',
+                'status',
+                'is_featured',
+                'views_count',
+                'likes_count',
+                'published_at',
+                'created_at',
+            )
             ->jsonPaginate();
 
         return PostResource::collection($posts);
@@ -379,7 +407,7 @@ class PostFilterController extends Controller
             ? array_map('trim', explode(',', $request->input('fields.posts')))
             : $allowed;
 
-        return array_map(fn ($f) => "p.$f", array_intersect($requested, $allowed) ?: $allowed);
+        return array_map(fn($f) => "p.$f", array_intersect($requested, $allowed) ?: $allowed);
     }
 
     private function meta($paginator): array
@@ -404,7 +432,7 @@ class PostFilterController extends Controller
 
     private function manualLinks(Request $request, int $page, int $last): array
     {
-        $base = fn ($p) => $request->fullUrlWithQuery(['page' => ['number' => $p]]);
+        $base = fn($p) => $request->fullUrlWithQuery(['page' => ['number' => $p]]);
         return [
             'first' => $base(1),
             'last'  => $base($last),
