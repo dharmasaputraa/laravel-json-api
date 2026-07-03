@@ -23,8 +23,9 @@ class PostController extends BaseApiController
         protected PostService $postService
     ) {}
 
+    //  (Approach A — JsonApiResource)
     /**
-     * List all posts (Approach A — JsonApiResource).
+     * List all posts.
      *
      * Returns a paginated list of posts using Laravel's JsonApiResource.
      *
@@ -61,8 +62,9 @@ class PostController extends BaseApiController
         return (new PostResource($post))->response()->setStatusCode(201);
     }
 
+    //  (Approach A — JsonApiResource)
     /**
-     * Show a single post (Approach A — JsonApiResource).
+     * Show a single post.
      *
      * @throws \Illuminate\Database\Eloquent\ModelNotFoundException 404 — Post not found.
      *

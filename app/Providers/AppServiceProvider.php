@@ -34,6 +34,6 @@ class AppServiceProvider extends ServiceProvider
                 'description' => 'API documentation for JSON:API spec practice. Demonstrates Approach A (JsonApiResource) and Approach B (Manual envelope) for Post resources.',
             ],
         ])
-        ->expose(ui: '/docs/v1', document: '/docs/v1.json');
+            ->expose(ui: '/docs/v1', document: '/docs/v1.json');
     }
 }

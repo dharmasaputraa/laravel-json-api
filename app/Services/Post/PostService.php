@@ -19,12 +19,25 @@ class PostService extends BaseService
 
     // Spatie QueryBuilder config
     protected array $allowedFields = [
-        'posts.id', 'posts.title', 'posts.slug', 'posts.body',
-        'posts.status', 'posts.is_featured', 'posts.views_count',
-        'posts.published_at', 'posts.created_at', 'posts.updated_at',
-        'users.id', 'users.name', 'users.email',
-        'categories.id', 'categories.name', 'categories.slug',
-        'tags.id', 'tags.name', 'tags.slug',
+        'posts.id',
+        'posts.title',
+        'posts.slug',
+        'posts.body',
+        'posts.status',
+        'posts.is_featured',
+        'posts.views_count',
+        'posts.published_at',
+        'posts.created_at',
+        'posts.updated_at',
+        'users.id',
+        'users.name',
+        'users.email',
+        'categories.id',
+        'categories.name',
+        'categories.slug',
+        'tags.id',
+        'tags.name',
+        'tags.slug',
     ];
     protected string $defaultSort = '-published_at';
 
