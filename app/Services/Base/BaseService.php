@@ -134,26 +134,20 @@ abstract class BaseService
     {
         $builder = QueryBuilder::for($this->model)
             ->allowedSorts(...$this->allowedSorts)
-            ->defaultSort($this->defaultSort)
-            ->paginate((int) ($request->query('page.size', 15)));
+            ->defaultSort($this->defaultSort);
 
-        // Only add these if non-empty (Satie throws on empty arrays)
+        // Only add these if non-empty (Spatie throws on empty arrays)
         if (!empty($this->spatieFilters)) {
-            $builder = QueryBuilder::for($this->model)
-                ->allowedFilters(...$this->spatieFilters)
-                ->allowedSorts(...$this->allowedSorts)
-                ->defaultSort($this->defaultSort);
-
-            if (!empty($this->allowedIncludes)) {
-                $builder = $builder->allowedIncludes(...$this->allowedIncludes);
-            }
-            if (!empty($this->allowedFields)) {
-                $builder = $builder->allowedFields(...$this->allowedFields);
-            }
-
-            $builder = $builder->paginate((int) ($request->query('page.size', 15)));
+            $builder = $builder->allowedFilters(...$this->spatieFilters);
+        }
+        if (!empty($this->allowedIncludes)) {
+            $builder = $builder->allowedIncludes(...$this->allowedIncludes);
+        }
+        if (!empty($this->allowedFields)) {
+            $builder = $builder->allowedFields(...$this->allowedFields);
         }
 
-        return $builder;
+        // input() supports dot notation (e.g. page.size), query() does not
+        return $builder->paginate((int) $request->input('page.size', 15));
     }
 }
