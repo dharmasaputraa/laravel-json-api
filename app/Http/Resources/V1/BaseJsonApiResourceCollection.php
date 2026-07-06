@@ -3,6 +3,7 @@
 namespace App\Http\Resources\V1;
 
 use Illuminate\Http\Resources\JsonApi\AnonymousResourceCollection;
+use Illuminate\Support\Arr;
 
 /**
  * Custom JSON:API collection that:
@@ -88,7 +89,7 @@ class BaseJsonApiResourceCollection extends AnonymousResourceCollection
     protected function jsonApiMeta(array $paginated): array
     {
         // Remove keys that should not appear in meta
-        $meta = array_except($paginated, [
+        $meta = Arr::except($paginated, [
             'data',
             'first_page_url',
             'last_page_url',
