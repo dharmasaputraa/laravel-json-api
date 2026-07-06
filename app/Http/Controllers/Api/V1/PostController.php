@@ -218,15 +218,15 @@ class PostController extends BaseApiController
 
         // BAD: pagination meta built by hand
         return response()->json([
-            'jsonapi' => ['version' => '1.0'],
             'data' => $data,
             'meta' => [
-                'current_page' => $posts->currentPage(),
+                'currentPage' => $posts->currentPage(),
                 'from' => $posts->firstItem(),
-                'last_page' => $posts->lastPage(),
-                'per_page' => $posts->perPage(),
+                'lastPage' => $posts->lastPage(),
+                'perPage' => $posts->perPage(),
                 'to' => $posts->lastItem(),
                 'total' => $posts->total(),
+                'timestamp' => now()->utc()->toIso8601String(),
             ],
             'links' => [
                 'first' => $posts->url(1),
@@ -291,7 +291,6 @@ class PostController extends BaseApiController
         }
 
         return response()->json([
-            'jsonapi' => ['version' => '1.0'],
             'data' => $data,
         ]);
     }

@@ -43,7 +43,7 @@ class UserController extends BaseApiController
                 'tags.id', 'tags.name', 'tags.slug',
             )
             ->defaultSort('-created_at')
-            ->paginate((int) ($request->query('page.size', 15)));
+            ->paginate((int) ($request->input('page.size', 15)));
 
         return UserResource::collection($users);
     }

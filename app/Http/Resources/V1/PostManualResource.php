@@ -36,7 +36,6 @@ class PostManualResource extends JsonResource
             : $allAttributes;
 
         return [
-            'jsonapi' => ['version' => '1.0'],
             'data' => [
                 'type' => 'posts',
                 'id' => (string) $this->id,
@@ -59,13 +58,6 @@ class PostManualResource extends JsonResource
                     'self' => route('api.v1.posts-manual.show', ['post' => $this->id]),
                 ],
             ],
-        ];
-    }
-
-    public function with($request): array
-    {
-        return [
-            'jsonapi' => ['version' => '1.0'],
         ];
     }
 

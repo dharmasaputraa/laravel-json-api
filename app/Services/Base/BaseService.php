@@ -56,7 +56,7 @@ abstract class BaseService
             $query->latest();
         }
 
-        $perPage = (int) ($request->query('per_page', 15));
+        $perPage = (int) ($request->input('page.size', 15));
 
         return $query->paginate($perPage);
     }

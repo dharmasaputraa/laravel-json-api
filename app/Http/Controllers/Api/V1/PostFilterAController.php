@@ -79,7 +79,7 @@ class PostFilterAController extends BaseApiController
             $query->orderBy($field, $direction);
         }
 
-        $perPage = (int) ($request->query('page.size', 15));
+        $perPage = (int) ($request->input('page.size', 15));
 
         // ✅ Approach A: Let JsonApiResource handle the envelope
         return PostResource::collection($query->paginate($perPage));
@@ -142,7 +142,7 @@ class PostFilterAController extends BaseApiController
         $field = ltrim($sort, '-');
         $query->orderBy('posts.' . $field, $direction);
 
-        $perPage = (int) ($request->query('page.size', 15));
+        $perPage = (int) ($request->input('page.size', 15));
         $paginated = $query->paginate($perPage);
 
         // ✅ Approach A: Hydrate Eloquent models from raw results, then use PostResource
@@ -210,8 +210,8 @@ class PostFilterAController extends BaseApiController
             $field = 'published_at';
         }
 
-        $page = (int) ($request->query('page.number', 1));
-        $size = (int) ($request->query('page.size', 15));
+        $page = (int) ($request->input('page.number', 1));
+        $size = (int) ($request->input('page.size', 15));
         $offset = ($page - 1) * $size;
 
         // Count total
@@ -281,7 +281,7 @@ class PostFilterAController extends BaseApiController
             ->allowedIncludes('author', 'category', 'tags')
             ->allowedSorts('published_at', 'title', 'views_count', 'created_at')
             ->defaultSort('-published_at')
-            ->paginate((int) ($request->query('page.size', 15)));
+            ->paginate((int) ($request->input('page.size', 15)));
 
         // ✅ Approach A: Let JsonApiResource handle everything
         return PostResource::collection($posts);

@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use Dedoc\Scramble\Scramble;
 use Dedoc\Scramble\Support\Generator\OpenApi;
+use Illuminate\Pagination\Paginator;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -21,7 +22,28 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        $this->configurePagination();
         $this->configureScramble();
+    }
+
+    /**
+     * Configure pagination to use JSON:API bracket notation.
+     *
+     * Reads the current page from `page[number]` (the JSON:API standard)
+     * instead of the default `page` query parameter.
+     */
+    protected function configurePagination(): void
+    {
+        Paginator::currentPageResolver(function (string $pageName = 'page') {
+            $page = request()->input('page.number');
+
+            if ($page !== null) {
+                return $page;
+            }
+
+            // Fallback: support legacy ?page=N format
+            return request()->input($pageName);
+        });
     }
 
     protected function configureScramble(): void

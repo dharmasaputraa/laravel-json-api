@@ -70,10 +70,9 @@ class PostFilterController extends BaseApiController
             $query->orderBy($field, $direction);
         }
 
-        $perPage = (int) ($request->query('page.size', 15));
+        $perPage = (int) ($request->input('page.size', 15));
 
         return response()->json([
-            'jsonapi' => ['version' => '1.0'],
             'data' => PostResource::collection($query->paginate($perPage)),
         ]);
     }
@@ -127,11 +126,10 @@ class PostFilterController extends BaseApiController
         $field = ltrim($sort, '-');
         $query->orderBy('posts.' . $field, $direction);
 
-        $perPage = (int) ($request->query('page.size', 15));
+        $perPage = (int) ($request->input('page.size', 15));
         $results = $query->paginate($perPage);
 
         return response()->json([
-            'jsonapi' => ['version' => '1.0'],
             'data' => $results,
         ]);
     }
@@ -175,8 +173,8 @@ class PostFilterController extends BaseApiController
             $field = 'published_at';
         }
 
-        $page = (int) ($request->query('page.number', 1));
-        $size = (int) ($request->query('page.size', 15));
+        $page = (int) ($request->input('page.number', 1));
+        $size = (int) ($request->input('page.size', 15));
         $offset = ($page - 1) * $size;
 
         $countSql = "SELECT COUNT(*) as total FROM posts p " . ($whereClause ? "WHERE " . substr($whereClause, 6) : '');
@@ -191,13 +189,13 @@ class PostFilterController extends BaseApiController
         $posts = DB::select($sql, $bindings);
 
         return response()->json([
-            'jsonapi' => ['version' => '1.0'],
             'data' => $posts,
             'meta' => [
-                'current_page' => $page,
-                'per_page' => $size,
+                'currentPage' => $page,
+                'perPage' => $size,
                 'total' => $total,
-                'last_page' => ceil($total / $size),
+                'lastPage' => ceil($total / $size),
+                'timestamp' => now()->utc()->toIso8601String(),
             ],
         ]);
     }
@@ -226,7 +224,6 @@ class PostFilterController extends BaseApiController
             ->jsonPaginate();
 
         return response()->json([
-            'jsonapi' => ['version' => '1.0'],
             'data' => PostResource::collection($posts),
         ]);
     }

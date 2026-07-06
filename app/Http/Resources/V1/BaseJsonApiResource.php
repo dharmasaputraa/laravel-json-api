@@ -29,16 +29,6 @@ abstract class BaseJsonApiResource extends JsonApiResource
     protected const DEFAULT_FIELDS = null;
 
     /**
-     * Automatically include the JSON:API version object in every response.
-     */
-    public function with($request): array
-    {
-        return [
-            'jsonapi' => ['version' => '1.0'],
-        ];
-    }
-
-    /**
      * Attributes filtered by sparse fieldsets.
      * Delegates to allAttributes() and applies filtering.
      */

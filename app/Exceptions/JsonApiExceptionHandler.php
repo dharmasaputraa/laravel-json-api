@@ -39,7 +39,6 @@ class JsonApiExceptionHandler extends ExceptionHandler
     {
         if ($e instanceof ValidationException) {
             return response()->json([
-                'jsonapi' => ['version' => '1.0'],
                 'errors' => collect($e->errors())->flatMap(function ($messages, $field) {
                     return collect($messages)->map(function ($message) use ($field) {
                         return [
@@ -55,7 +54,6 @@ class JsonApiExceptionHandler extends ExceptionHandler
 
         if ($e instanceof ModelNotFoundException) {
             return response()->json([
-                'jsonapi' => ['version' => '1.0'],
                 'errors' => [
                     [
                         'status' => '404',
@@ -68,7 +66,6 @@ class JsonApiExceptionHandler extends ExceptionHandler
 
         if ($e instanceof NotFoundHttpException) {
             return response()->json([
-                'jsonapi' => ['version' => '1.0'],
                 'errors' => [
                     [
                         'status' => '404',
@@ -81,7 +78,6 @@ class JsonApiExceptionHandler extends ExceptionHandler
 
         if ($e instanceof AuthenticationException) {
             return response()->json([
-                'jsonapi' => ['version' => '1.0'],
                 'errors' => [
                     [
                         'status' => '401',
@@ -93,7 +89,6 @@ class JsonApiExceptionHandler extends ExceptionHandler
         }
 
         return response()->json([
-            'jsonapi' => ['version' => '1.0'],
             'errors' => [
                 [
                     'status' => (string) ($e->getCode() ?: 500),
