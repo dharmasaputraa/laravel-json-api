@@ -16,6 +16,7 @@
         "laravel/pail": "^1.2.5",
         "laravel/pao": "^1.0.6",
         "laravel/tinker": "^3.0",
+        "opcodesio/log-viewer": "^3.24",
         "spatie/laravel-query-builder": "^7.3"
     },
     "require-dev": {
